@@ -1,0 +1,43 @@
+let x, y; 
+let side = 50; 
+let state = 1; 
+
+function setup() {
+  createCanvas(400, 400);
+  x = 0;
+  y = height - side;
+}
+
+function draw() {
+  background(220);
+
+
+  fill(255, 0, 0);
+  rect(x, y, side, side);
+
+  if (state === 1) {
+    x += 2;
+    if (x + side > width) {
+      x = width - side;
+      state = 2;
+    }
+  } else if (state === 2) {
+    y -= 2;
+    if (y < 0) {
+      y = 0;
+      state = 3;
+    }
+  } else if (state === 3) {
+    x -= 2;
+    if (x < 0) {
+      x = 0;
+      state = 4;
+    }
+  } else if (state === 4) {
+    y += 2;
+    if (y + side > height) {
+      y = height - side;
+      state = 1;
+    }
+  }
+}
