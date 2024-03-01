@@ -4,15 +4,25 @@
 // Creating a gradient + drawing with nested loops
 
 let rectHeight = 40;
+let circleSize = 20;
+let spacing = 25;
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
   noStroke();
+  //noLoop(); // stop at the end of draw();
+  gradientBackground();
+  nestedLoops();
+}
+
+function mousePressed(){
+  //draw();
+  gradientBackground();
+  nestedLoops();
 }
 
 function draw() {
-  background(220);
-  gradientBackground();
+
 }
 
 function gradientBackground(){
@@ -27,12 +37,37 @@ function gradientBackground(){
   }
 }
 
+function circleDistance(x1, y1, x2, y2){
+  // given two points (x1,y1), (x2,y2), return the 
+  // straightline distance between.  // manhatten???
+  let a = abs(x1-x2);
+  let b = abs(y1-y2);
+  let c = sqrt(pow(a,2) + pow(b,2));
+  return c;
+  // dist();
+}
+
 function nestedLoops(){
   // using a loop within a loop, generate a grid arragement
   // for some circles
-  for(let x = 0; x < 100; x+= spacing){ // 0 20 40 60 80
-    for(let y = 0; y < 100; y += spacing){ //0 20 40 60 80
-        circle(x,y,10);
+  for(let x = 0; x < width; x+= spacing){ // COLUMN0 20 40 60 80
+    for(let y = 0; y < height; y += spacing){ //ROWS 0 20 40 60 80
+      let d = round(circleDistance(x,y,mouseX,mouseY));
+      // close circles: different color
+      let currentSize = circleSize ;
+      if(d>100){
+        fill(0);
+      }
+      else{
+        fill(255,0,0);
+        currentSize = circleSize *1.2;
+      }
+
+      circle(x,y,circleSize);
+      fill(255);
+      textAlign(CENTER,CENTER);
+
+      text(d, x, y);
     }
   }
 }
