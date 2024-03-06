@@ -16,11 +16,11 @@ function draw() {
 }
 
 function squareLoops(){
-  for(let x = 0; x < width; x += squareSize){
-    for(let y=0; y < height; y += squareSize){
+  for(let x = 0; x <= width - squareSize; x += squareSize){
+    for(let y=0; y <= height - squareSize; y += squareSize){
       stroke(0);
       square(x,y,squareSize);
-      fill(random(250), random(250), random(250));
+      fill(random(250), 0, random(250));
     }
   }
 }
@@ -33,6 +33,7 @@ function mousePressed(){
     if(mouseButton === RIGHT){
       squareSize = squareSize - 0.005;
     }
+    clear();
   }
   else{
     if(mouseButton === LEFT){
@@ -41,6 +42,7 @@ function mousePressed(){
     if(mouseButton === RIGHT){
       squareSize = squareSize - 5;
     }
+    clear();
   }
   
   squareLoops();
