@@ -4,6 +4,7 @@
 
 let rectWidth = 5;
 
+
 function setup() {
   createCanvas(windowWidth, windowHeight);
   background(255);
@@ -12,13 +13,15 @@ function setup() {
 }
 
 function draw() {
-
+  drawFlag();
 }
 
 function generateTerrain(){
   // using a single liip, generate a bunch of side-to-side
   // rectangles of varying height(pattern, random, noise)
   let rectHeight;
+  let highestTop = 0;
+  let flagHeight = 0;
   let heightTime = 0;
   fill(0);
   for(let x = 0; x < width; x += rectWidth){
@@ -27,6 +30,11 @@ function generateTerrain(){
     rect(x, height, rectWidth, rectHeight);
     heightTime += 0.01;
   }
+  if(rectHeight > highestTop){
+    highestTop = rectHeight; 
+    flagHeight = height - rectHeight / 2
+  }
+  drawFlag(flagHeight, height - highestTop);
 }
 
 function keyPressed(){
@@ -43,4 +51,12 @@ function keyPressed(){
       clear();
   }
   generateTerrain();
+}
+
+function drawFlag(x, y) {
+  // Draw flag
+  fill(0);
+  triangle(x, y, x, y - 30, x + 10, y);
+  fill(0);
+  rect(x, y, 3, 30);
 }
