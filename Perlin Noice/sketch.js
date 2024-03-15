@@ -2,13 +2,15 @@
 // Melody CHen
 // 3/11/2024
 
-let rectWidth = 5;
-
+let rectWidth, rectHeight = 1;
+let totalHeight, averageHeight;
+let rectCount;
+let topX, topY;
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
   background(255);
-  rectMode(CENTER); //CHANGE THIS!!!
+  rectMode(CORNERS); //CHANGE THIS!!!
   generateTerrain();
 }
 
@@ -19,44 +21,56 @@ function draw() {
 function generateTerrain(){
   // using a single liip, generate a bunch of side-to-side
   // rectangles of varying height(pattern, random, noise)
-  let rectHeight;
-  let highestTop = 0;
-  let flagHeight = 0;
+  let topX = 0;
+  let topY = 0;
+  let totalHeight = 0;
   let heightTime = 0;
+  let noiseShift = 0.01;
+  let rectCount = 0;
   fill(0);
   for(let x = 0; x < width; x += rectWidth){
     rectHeight = noise(heightTime);
     rectHeight = map(rectHeight,0,1,0,height);
-    rect(x, height, rectWidth, rectHeight);
-    heightTime += 0.01;
-  }
-  if(rectHeight > highestTop){
-    highestTop = rectHeight; 
-    flagHeight = height - rectHeight / 2
-  }
-  drawFlag(flagHeight, height - highestTop);
-}
-
-function keyPressed(){
-  if(keyCode === LEFT_ARROW){
-    if(rectWidth > 1){
-      rectWidth = rectWidth -1;
-      clear();
+    rect(x, height, x + rectWidth, height - rectHeight);
+    heightTime += noiseShift;
+    totalHeight += rectHeight;
+    rectCount += 1;
+    if(topY < rectHeight){
+      topY = rectHeight; 
+      topX = x;
     }
-    else (rectWidth = rectWidth - 0.001);
+    // averageHeight = totalHeight / rectCount;
+    // drawAverage();
+    drawFlag(topX, height - topY);
   }
-  generateTerrain();
-  if(keyCode === RIGHT_ARROW){
-      rectWidth = rectWidth +1;
-      clear();
-  }
-  generateTerrain();
+
 }
 
+// function keyPressed(){
+//   if(keyCode === LEFT_ARROW){
+//     if(rectWidth > 1){
+//       rectWidth = rectWidth -1;
+//       clear();
+//     }
+//     else (rectWidth = rectWidth - 0.001);
+//   }
+//   generateTerrain();
+//   if(keyCode === RIGHT_ARROW){
+//       rectWidth = rectWidth +1;
+//       clear();
+//   }
+//   generateTerrain();
+// }
+
+// function drawAverage() {
+//   fill(0, 0, 255);
+//   rect(0, height - averageHeight, width, height - averageHeight + 5);
+// }
+
+// Draw the flag
 function drawFlag(x, y) {
-  // Draw flag
+  stroke(0);
   fill(0);
-  triangle(x, y, x, y - 30, x + 10, y);
-  fill(0);
-  rect(x, y, 3, 30);
+  line(x, y, x, y - 30);
+  triangle(x, y - 30, x - 10 / 2, y - 30, x, y - 30 - 10);
 }
