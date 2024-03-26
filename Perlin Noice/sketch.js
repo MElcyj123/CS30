@@ -9,7 +9,6 @@ let totalHeight = 0;
 let averageHeight = 0; 
 let rectCount = 0;
 let topX = 0; //highest coordinate
-let topY = 0;
 let heightShift = 1;
 let heightTime = 0;
 
@@ -23,7 +22,7 @@ function setup() {
 function draw() {
   background(255);
   heightTime = 0 + heightShift; // panning
-  heightShift += 0.1;
+  heightShift += -0.1;
   generateTerrain();
 }
 
@@ -31,6 +30,9 @@ function draw() {
 // perlin noise
 function generateTerrain() {
   fill(0);
+  let topY = 0;
+  rectCount = 0;
+  totalHeight = 0;
   for (let x = 0; x < width; x += rectWidth) {
     rectHeight = noise(heightTime);
     rectHeight = map(rectHeight, 0, 1, 0, height);
