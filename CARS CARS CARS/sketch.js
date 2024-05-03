@@ -7,11 +7,15 @@ let width;
 let vehicles = [];
 let eastbound = [];
 let westbound = [];
+let trafficLight;
+//global variables above
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
   height = windowHeight;
   width = windowWidth;
+
+  //add new vehicles randomly
   for(let i=0; i<20; i++){
     const y = random(height/2.2, height/3.8);
     eastbound.push(new Vehicle(random(0, width), y, 1));
@@ -20,6 +24,7 @@ function setup() {
     const y = random(height/1.89, height/1.4);
     westbound.push(new Vehicle(random(0, width), y, 0));
 }
+  trafficLight = new Trafficlight();
 }
 
 function draw() {
@@ -30,11 +35,9 @@ function draw() {
   for(let i=0; i<westbound.length; i++){
     westbound[i].action();
   }
+  trafficLight.display();
 }
 
-// function mouseClicked(){
-//   eastbound.push(new Vehicle(mouseX,mouseY,1));
-// }
 
 function drawRoad(){
   // the black rectangle(road)
@@ -50,7 +53,19 @@ function drawRoad(){
   for (let i = 0; i < width; i += 60){
     rect(i, height/2, 30, 3);
   }
-  
+}
+
+function mousePressed(){
+  if(mouseButton === LEFT){
+    if(keyCode === SHIFT){
+      const y = random(height/1.89, height/1.4);
+      westbound.push(new Vehicle(random(0, width), y, 0));
+    }
+    else{
+      const y = random(height/2.2, height/3.8);
+      eastbound.push(new Vehicle(random(0, width), y, 1));
+  }
+}
 }
 
 class Vehicle {
@@ -68,11 +83,26 @@ class Vehicle {
   }
   //Class Method
   action(){
+    //trafficlight
+    if (trafficLight.type ===0){
+      this.move();
+    }  
     this.display();
-    this.move();
     //Highlight 4/29 stop here
     this.speedUp();
     this.speedDown();
+
+    // 1% chance for speedup, speeddown and changecolor
+    let chance = int(random(0,100));
+    if(chance === 1){
+      this.speedUp();
+    }
+    if(chance === 1){
+      this.speedDown();
+    }
+    if (chance === 1){
+      this.changeColor();
+    }
   }
 
   move(){
@@ -116,8 +146,9 @@ class Vehicle {
   }
 
   changeColor(){
-
+    this.c = color(random(255), random(255), random(255));
   }
+
   display(){
     if(this.type===0){
       this.drawCar();
@@ -143,6 +174,38 @@ class Vehicle {
   }
 }
 
-function mousePressed(){
-  
+// green and red, stop and then start move 
+class Trafficlight {
+  constructor(){
+    this.type = 0;
+    this.frame = 0;
+  }
+
+  display(){
+    this.draw();
+    this.switchLight();
+  }
+
+  draw() {
+    circle(width - 500, height - 100, 30);
+    if (this.type === 0) {
+      fill(0, 255, 0);//green
+    }
+    else {
+      fill(255, 0, 0);//red
+    }
+  }
+
+  switchLight(){
+    this.draw();
+    this.frame ++;
+    if(this.frame > 120){ //120 gap
+      if (this.type === 0){
+        this.type = 1;
+      } else {
+        this.type = 0;
+      }
+      this.frame = 0; //reset timer
+    }
+}
 }
