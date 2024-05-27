@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Avengers Tower Mosaic</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+    }
+  </style>
+  <script src="libraries/p5.js"></script>
+  <script src="libraries/p5play.js"></script>
+  <script src="libraries/planck.js"></script>
+</head>
+<body>
+  <script>
+    let img;
+    let cellSize = 10;
+
+    function preload() {
+      img = loadImage('libraries/avengers-tower.jpg'); // Load the Avengers Tower image
+    }
+
+    function setup() {
+      createCanvas(windowWidth, windowHeight);
+      pixelDensity(1); 
+      img.resize(width, height); 
+      noLoop(); // Run draw() only once
+
+      for (let y = 0; y < height; y += cellSize) {
+        for (let x = 0; x < width; x += cellSize) {
+          let c = img.get(x, y); //color of the pixel
+          fill(c); 
+          noStroke()
+          rect(x, y, cellSize, cellSize); 
+        }
+      }
+    }
+  </script>
+</body>
+</html>
