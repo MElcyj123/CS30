@@ -1,11 +1,13 @@
 let captainCanuck, groundSensor, coins, spikes, door;
 let walkable, floortiles;
-let playerImg1, playerImg2, floorTileImg, bgImg, coinsImg, platformImg, spikesImg, doorImg;
+let playerImg1, playerImg2, floorTileImg, bgImg, coinsImg, platformImg, spikesImg, doorImg, lavaImg, lava2Img, blockImg;
 let backgroundMusic, coinSound;
 const TILE_SIZE = 100;
 let currentLevel = 0;
 let score = 0;
-let skipButton;
+let skipButton, startGameButton, gameInfoButton;
+let cameraOffsetX = 0;
+let gameStarted = false;
 
 function preload() {
   playerImg1 = loadImage("assets/1.png");
@@ -16,13 +18,30 @@ function preload() {
   coinsImg = loadImage("assets/coins.png");
   spikesImg = loadImage("assets/spikes.png");
   doorImg = loadImage("assets/door.png");
+  lavaImg = loadImage("assets/lava.png");
+  lava2Img = loadImage("assets/lava2.jpg");
+  blockImg = loadImage("assets/block.png");
+  
 
   coinSound = loadSound("assets/coin_sound.mp3");
 }
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
-  captainCanuck = new Player(50, 500, 70, 100);
+
+  // Create buttons for starting screen
+  startGameButton = createButton('Start Game');
+  startGameButton.position(width / 2 - 100, height / 2 - 20);
+  startGameButton.mousePressed(startGame);
+
+  gameInfoButton = createButton('GameInfo');
+  gameInfoButton.position(width / 2 - 100, height / 2 + 20);
+
+  // Hide the buttons initially
+  startGameButton.hide();
+  gameInfoButton.hide();
+
+  captainCanuck = new Player(0, 500, 70, 100);
 
   groundSensor = createSprite(captainCanuck.x, captainCanuck.y + captainCanuck.height / 2 + 1, captainCanuck.width, 5);
   groundSensor.visible = false;
@@ -33,16 +52,80 @@ function setup() {
   coins = new Group();
   spikes = new Group();
   door = new Group();
-  drawMap();
 
   skipButton = createButton('Skip');
   skipButton.position(10, 10);
   skipButton.mousePressed(skipLevel);
+  skipButton.hide();
+  
+  // Display the starting screen
+  showStartingScreen();
+}
+
+function styleButton(button) {
+  button.style('background-color', '#4CAF50');
+  button.style('border', 'none');
+  button.style('color', 'white');
+  button.style('padding', '15px 32px');
+  button.style('text-align', 'center');
+  button.style('text-decoration', 'none');
+  button.style('display', 'inline-block');
+  button.style('font-size', '16px');
+  button.style('margin', '4px 2px');
+  button.style('cursor', 'pointer');
+  button.style('border-radius', '12px');
+}
+
+function showStartingScreen() {
+  background(bgImg);
+  fill(255);
+  textSize(64);
+  textAlign(CENTER, CENTER);
+  text('Game Name', width / 2, height / 2 - 100);
+
+  startGameButton.show();
+  gameInfoButton.show();
 }
 
 function draw() {
+  if (!gameStarted) {
+    showStartingScreen();
+  } else {
+    playGame();
+  }
+}
+
+function keyPressed() {
+  if (key === 'D') {
+    restartLevel();
+  }
+}
+
+function showStartingScreen() {
   background(bgImg);
-  
+  fill(255);
+  textSize(64);
+  textAlign(CENTER, CENTER);
+  text('Game name', width / 2, height / 2 - 100);
+
+  // Show the buttons
+  startGameButton.show();
+  gameInfoButton.show();
+}
+
+function startGame() {
+  gameStarted = true;
+  startGameButton.hide();
+  gameInfoButton.hide();
+  skipButton.show();
+  drawMap(); 
+
+  captainCanuck = new Player(0, 100, 70, 100);
+}
+
+function playGame() {
+  background(bgImg);
+
   groundSensor.position.x = captainCanuck.x + 35;
   groundSensor.position.y = captainCanuck.y + captainCanuck.height;
 
@@ -59,7 +142,7 @@ function draw() {
   });
 
   captainCanuck.sprite.overlap(spikes, (player, spike) => {
-    captainCanuck = new Player(50, 500, 70, 100);
+    captainCanuck = new Player(0, 100, 70, 100);
   });
 
   captainCanuck.sprite.overlap(door, (player, doorSprite) => {
@@ -67,8 +150,23 @@ function draw() {
   });
 
   captainCanuck.move();
+
+  // Update the camera offset based on the player's position
+  if (captainCanuck.x - cameraOffsetX > width / 2) {
+    cameraOffsetX = captainCanuck.x - width / 2;
+  } else if (captainCanuck.x - cameraOffsetX < width / 4) {
+    cameraOffsetX = captainCanuck.x - width / 4;
+  }
+
+  // Apply the camera offset
+  push();
+  translate(-cameraOffsetX, 0);
+
   captainCanuck.display();
   drawSprites();
+
+  // Reset the transformation
+  pop();
 
   fill(255);
   textSize(32);
@@ -92,196 +190,393 @@ function nextLevel() {
 
   door.removeSprites();
   door.clear();
-
-  currentLevel++;
-  if (currentLevel >= TILE_MAPS.length) {
-    currentLevel = 0; 
-  }
-
+  
+  currentLevel ++; 
   drawMap();
-  captainCanuck = new Player(50, 500, 70, 100); // Reset the player position
+  captainCanuck = new Player(0, 100, 70, 100); 
+  cameraOffsetX = 0; 
 }
 
 function skipLevel() {
   nextLevel();
 }
 
-class Player {
-  constructor(x, y, width, height) {
-    this.x = x;
-    this.y = y;
-    this.width = width;
-    this.height = height;
-    this.speedX = 0;
-    this.speedY = 0;
-    this.onGround = false;
-    this.jump = false;
-    this.player = playerImg1;
-    this.facingRight = true;
-    this.sprite = createSprite();
-
-    this.sprite.visible = false;
-  }
-
-  move() {
-    if (!this.onGround) {
-      this.speedY += 0.3;
-      if (keyIsDown(LEFT_ARROW)) {
-        this.speedX -= 0.3;
-        this.facingRight = false;
-      }
-      if (keyIsDown(RIGHT_ARROW)) {
-        this.speedX += 0.3;
-        this.facingRight = true;
-      }
-    } else {
-      this.speedY = 0;
-      if (keyIsDown(LEFT_ARROW)) {
-        this.speedX -= 1.2;
-        this.facingRight = false;
-      }
-      if (keyIsDown(RIGHT_ARROW)) {
-        this.speedX += 1.2;
-        this.facingRight = true;
-      }
-      if (keyIsDown(UP_ARROW) && this.onGround) {
-        this.jump = true;
-      }
-      if (this.jump) {
-        this.speedY = -10;
-        this.jump = false;
-        this.onGround = false;
-      } else {
-        this.player = playerImg1;
-      }
-      this.speedX *= 0.8;
-    }
-
-    this.y += this.speedY;
-    this.x += this.speedX;
-
-    if (this.y >= height - this.height / 2) {
-      this.y = height - this.height / 2;
-      this.onGround = true;
-      this.player = playerImg1;
-    } else {
-      this.onGround = false;
-    }
-
-    this.x = constrain(this.x, 0, width - this.width);
-
-    this.sprite.position.x = this.x + this.player.width / 2;
-    this.sprite.position.y = this.y + this.player.height;
-  }
-
-  display() {
-    let imgWidth = this.player === playerImg2 ? this.width * 1.8 : this.width;
-    let imgHeight = this.player === playerImg2 ? this.height * 1.8 : this.height;
-
-    push();
-    translate(this.x + imgWidth / 2, this.y + imgHeight / 2);
-    if (!this.facingRight) {
-      scale(-1, 1);
-    }
-    imageMode(CENTER);
-    image(this.player, 0, 0, imgWidth, imgHeight);
-    pop();
-  }
+function restartLevel() {
+  drawMap();
+  captainCanuck = new Player(0, 100, 70, 100);
+  cameraOffsetX = 0;
 }
+
+
+class Player {
+ constructor(x, y, width, height) {
+   this.x = x;
+   this.y = y;
+   this.width = width;
+   this.height = height;
+   this.speedX = 0;
+   this.speedY = 0;
+   this.onGround = false;
+   this.jump = false;
+   this.player = playerImg1;
+   this.facingRight = true;
+   this.sprite = createSprite();
+
+
+   this.sprite.visible = false;
+ }
+
+
+ move() {
+   if (!this.onGround) {
+     this.speedY += 0.3;
+     if (keyIsDown(LEFT_ARROW)) {
+       this.speedX -= 0.3;
+       this.facingRight = false;
+     }
+     if (keyIsDown(RIGHT_ARROW)) {
+       this.speedX += 0.3;
+       this.facingRight = true;
+     }
+   } else {
+     this.speedY = 0;
+     if (keyIsDown(LEFT_ARROW)) {
+       this.speedX -= 1.2;
+       this.facingRight = false;
+     }
+     if (keyIsDown(RIGHT_ARROW)) {
+       this.speedX += 1.2;
+       this.facingRight = true;
+     }
+     if (keyIsDown(UP_ARROW) && this.onGround) {
+       this.jump = true;
+     }
+     if (this.jump) {
+       this.speedY = -10;
+       this.jump = false;
+       this.onGround = false;
+     } else {
+       this.player = playerImg1;
+     }
+     this.speedX *= 0.8;
+   }
+
+
+   this.y += this.speedY;
+   this.x += this.speedX;
+
+
+   if (this.y >= height - this.height / 2) {
+     this.y = height - this.height / 2;
+     this.onGround = true;
+     this.player = playerImg1;
+   } else {
+     this.onGround = false;
+   }
+
+
+   this.sprite.position.x = this.x + this.player.width / 2;
+   this.sprite.position.y = this.y + this.player.height;
+ }
+
+
+ display() {
+   let imgWidth = this.player === playerImg2 ? this.width * 1.8 : this.width;
+   let imgHeight = this.player === playerImg2 ? this.height * 1.8 : this.height;
+
+
+   push();
+   translate(this.x + imgWidth / 2, this.y + imgHeight / 2);
+   if (!this.facingRight) {
+     scale(-1, 1);
+   }
+   imageMode(CENTER);
+   image(this.player, 0, 0, imgWidth, imgHeight);
+   pop();
+ }
+}
+
 
 function drawMap() {
-  floortiles.removeSprites();
-  walkable.removeSprites();
-  walkable.clear();
+ floortiles.removeSprites();
+ walkable.removeSprites();
+ walkable.clear();
 
-  coins.removeSprites();
-  coins.clear();
 
-  spikes.removeSprites();
-  spikes.clear();
+ coins.removeSprites();
+ coins.clear();
 
-  door.removeSprites();
-  door.clear();
 
-  let tileMap = TILE_MAPS[currentLevel];
-  for (let row = 0; row < tileMap.length; row++) {
-    for (let col = 0; col < tileMap[row].length; col++) {
-      if (tileMap[row][col] === 'f') {
-        let floorTile = createSprite(col * TILE_SIZE, row * TILE_SIZE, TILE_SIZE, TILE_SIZE);
-        floorTile.addImage(floorTileImg);
-        floorTile.scale = (TILE_SIZE * 2) / floorTileImg.width;
-        floortiles.add(floorTile);
+ spikes.removeSprites();
+ spikes.clear();
 
-        let topCollision = createSprite(col * TILE_SIZE, row * TILE_SIZE - TILE_SIZE / 2, TILE_SIZE * 2, 10);
-        topCollision.visible = false;
-        walkable.add(topCollision);
-      }
 
-      if (tileMap[row][col] === 'c') {
-        let coin = createSprite(col * TILE_SIZE, row * TILE_SIZE, TILE_SIZE, TILE_SIZE);
-        coin.addImage(coinsImg);
-        coin.scale = 0.3;
-        coins.add(coin);
-      }
+ door.removeSprites();
+ door.clear();
 
-      if (tileMap[row][col] === 's') {
-        let spike = createSprite(col * TILE_SIZE, row * TILE_SIZE, TILE_SIZE, TILE_SIZE);
-        spike.addImage(spikesImg);
-        spike.scale = 0.3;
-        spikes.add(spike);
-      }
 
-      if (tileMap[row][col] === 'd') {
-        let doorSprite = createSprite(col * TILE_SIZE, row * TILE_SIZE, TILE_SIZE, TILE_SIZE);
-        doorSprite.addImage(doorImg);
-        doorSprite.scale = 0.3;
-        door.add(doorSprite);
-      }
+ let tileMap = TILE_MAPS[currentLevel];
+ for (let row = 0; row < tileMap.length; row++) {
+   for (let col = 0; col < tileMap[row].length; col++) {
+     if (tileMap[row][col] === 'f') {
+       let floorTile = createSprite(col * TILE_SIZE, row * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+       floorTile.addImage(floorTileImg);
+       floorTile.scale = (TILE_SIZE * 2) / floorTileImg.width;
+       floortiles.add(floorTile);
 
-      if (tileMap[row][col] === 'p') {
-        let platformSprite = createSprite(col * TILE_SIZE, row * TILE_SIZE, TILE_SIZE, TILE_SIZE);
-        platformSprite.addImage(platformImg);
-        walkable.add(platformSprite);
-      }
+
+       let topCollision = createSprite(col * TILE_SIZE, row * TILE_SIZE - TILE_SIZE / 2, TILE_SIZE * 2, 10);
+       topCollision.visible = false;
+       walkable.add(topCollision);
+     }
+
+
+     if (tileMap[row][col] === 'c') {
+       let coin = createSprite(col * TILE_SIZE, row * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+       coin.addImage(coinsImg);
+       coin.scale = 0.3;
+       coins.add(coin);
+     }
+
+
+     if (tileMap[row][col] === 's') {
+       let spike = createSprite(col * TILE_SIZE, row * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+       spike.addImage(spikesImg);
+       spike.scale = 0.3;
+       spikes.add(spike);
+     }
+
+
+     if (tileMap[row][col] === 'd') {
+       let doorSprite = createSprite(col * TILE_SIZE, row * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+       doorSprite.addImage(doorImg);
+       doorSprite.scale = 0.3;
+       door.add(doorSprite);
+     }
+
+
+     if (tileMap[row][col] === 'p') {
+       let platformSprite = createSprite(col * TILE_SIZE, row * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+       platformSprite.addImage(platformImg);
+       walkable.add(platformSprite);
+     }
+
+
+     if (tileMap[row][col] === 'l') {
+       let lavaSprite = createSprite(col * TILE_SIZE, row * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+       lavaSprite.addImage(lavaImg);
+       lavaSprite.scale = 0.9;
+       spikes.add(lavaSprite);
+     }
+
+     if (tileMap[row][col] === 'b') {
+      let blockSprite = createSprite(col * TILE_SIZE, row * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+      blockSprite.addImage(blockImg);
+      blockSprite.scale = 2.5;
+      floortiles.add(blockSprite);
+    
+      let topCollision2 = createSprite(col * TILE_SIZE, row * TILE_SIZE - TILE_SIZE / 2, TILE_SIZE * 2, 10);
+      topCollision2.visible = true; 
+      walkable.add(topCollision2);
     }
-  }
+
+    if (tileMap[row][col] === 'L') {
+      let lava2Sprite = createSprite(col * TILE_SIZE, row * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+      lava2Sprite.addImage(lava2Img);
+      lava2Sprite.scale = 1;
+      spikes.add(lava2Sprite);
+    }
+    
+   }
+ }
 }
+
 
 const TILE_MAPS = [
-  [
+ [ //Level 1
+   '................',
+   '................',
+   '..................d',
+   '...............c..f',
+   '...............f',
+   '..........c..f..',
+   '.....c.f..f.....',
+   '...csf..........',
+   '...f............',
+ 'pppppppppppppppppppppp',
+   '................',
+   '.................'
+ ],
+
+
+ [ //Level 2
+   '................',
+   '..................',
+   '..........d........',
+   '.......c..f........',
+   '.c..f..f...........',
+   '.f.................',
+   '...f.....cs.......',
+   '......f..f..........',
+   '...f.s..........',
+ 'pppppppppppppppppppppppp',
+   '................',
+   '.................'
+ ],
+
+
+ [ //Level 3
     '................',
-    '................',
-    '..................d',
-    '..................f',
-    '...............f',
-    '.............f..',
-    '.....c.f..f.....',
-    '...csf..........',
-    '...f............',
-    'ppppppppppppppppppp',
+    '..................',
+    '................d..',
+    '................f..',
+    '.............f.c...',
+    '...............f...',
+    '..........c..f.....',
+    '.......c..f........',
+    '...f.s.f........',
+  'pppppppppppppppppppppppp',
     '................',
     '.................'
   ],
 
-  [
+
+  [ //level 4
+      '................',
+      '..................',
+      '...................',
+      '..................d',
+      '..............s...f',
+      '.......c.....f.f...',
+      '.c.f...f..f........',
+      '.f..c..............',
+      '....f..............',
+    'pppppppppppppppppppppppp',
+      '................',
+      '.................'
+    ],
+
+
+    [ //Level 5
+      '................',
+      '..................',
+      'd..................',
+      'f..c...............',
+      '...f......c........',
+      '......f...f..c.....',
+      '.............f.....',
+      '................f..',
+      '...s....s.f..f....c',
+     'ppppppppppppppppppppp',
+      '................',
+      '.................'
+    ],
+
+
+  [ //Level 6
     '................',
-    '................',
-    '..................d',
-    '..................f',
-    '...c.s............',
-    '................',
-    '.........c........',
-    '......f..f..........',
-    '...f............',
-    'ppppppppppppppppppp',
+    '..................',
+    '...................',
+    '...................',
+    '...................',
+    '...................',
+    '......c..c.........',
+    '....c.f..f.........',
+    '....f........c...s.d',
+    'ppp...l.....ppppppp',
     '................',
     '.................'
   ],
+
+
+  [ //Level 7
+    '................',
+    '..................',
+    '...................',
+    '..............c...d',
+    '..............s...f',
+    '..........c..f.f...',
+    '.......c..f........',
+    '....c..f...........',
+    '....f..............',
+    'pp....l.....l....l.',
+    '................',
+    '.................'
+  ],
+
+
+  [ //Level 8
+    '................',
+    '..................',
+    '...................',
+    '...................',
+    '...................',
+    '...................',
+    '...................',
+    '...................',
+    'bbbbbb.............',
+    '................',,
+    '................',
+    '.................'
+  ],
+
+
+ //  [ //Level 9
+ //   // '................',
+ //    '..................',
+ //    '...................',
+ //    '...................',
+ //    '...................',
+ //    '...................',
+ //    '...................',
+ //    '...................',
+ //    '....s..............',
+ //  'pppppppppppppppppppppppp',
+ //    '................',
+ //    '.................'
+ //  ],
+
+
+ //  [ //Level 10
+ //   // '................',
+ //    '..................',
+ //    '...................',
+ //    '...................',
+ //    '...................',
+ //    '...................',
+ //    '...................',
+ //    '...................',
+ //    '....s..............',
+ //  'pppppppppppppppppppppppp',
+ //    '................',
+ //    '.................'
+ //  ],
+
+
+ //  [
+ //   // '................',
+ //    '..................',
+ //    '...................',
+ //    '...................',
+ //    '...................',
+ //    '...................',
+ //    '...................',
+ //    '...................',
+ //    '....s..............',
+ //  'pppppppppppppppppppppppp',
+ //    '................',
+ //    '.................'
+ //  ],
 ];
 
+
 function initGame() {
-  drawMap();
-  captainCanuck = new Player(50, 100, 70, 100);
+ drawMap();
+ captainCanuck = new Player(0, 100, 70, 100);
 }
 
+
 initGame();
+
+
+
